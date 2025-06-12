@@ -383,7 +383,6 @@ class AttentionLayer(nn.Module):
             values,
             attn_mask
         )
-        # 调整输出形状以匹配 out_projection
         out = out.permute(0, 2, 1, 3).contiguous()  # (B, H, L, d_values)
         out = out.view(B, L, -1)  # (B, L, H * d_values)
         return self.out_projection(out), attn

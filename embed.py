@@ -28,9 +28,6 @@ class RelativeEventEmbedding(nn.Module):
     def forward(self, x):
         batch_size, seq_len, feature_dim = x.shape
         
-        distances = x[:, :, 0]  
-        energies = x[:, :, -1]  
-
         delta_distances_list, delta_energies_list, weighted_distances_list = [], [], []
         distance_scales = torch.clamp(self.distance_scales, min=3, max=15).round().int()
 

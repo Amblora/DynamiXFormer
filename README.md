@@ -1,6 +1,6 @@
 # DynamiXFormer: A Hybrid Time-Series Forecasting Model with Dynamic Sparse Attention and Adaptive Frequency Denoising
 
-This repository contains the implementation of **DynamiXFormer**, an advanced time-series forecasting model. It integrates several innovative techniques to address key challenges in Series Forecasting, such as high computational complexity, sensitivity to noise, and difficulty in capturing complex temporal dependencies.
+This repository contains the implementation of **DynamiXFormer**, an advanced series forecasting model. It integrates several innovative techniques to address key challenges in Series Forecasting, such as high computational complexity, sensitivity to noise, and difficulty in capturing complex temporal dependencies.
 
 ## Table of Contents
 1. [Introduction](#1-introduction)
@@ -19,7 +19,7 @@ This repository contains the implementation of **DynamiXFormer**, an advanced ti
 
 ## 1. Introduction
 
-DynamiXFormer is a deep learning model designed for time-series forecasting tasks. It is built upon the classic Encoder-Decoder architecture but features deeply customized and innovative core components, making it more efficient and robust when handling complex time-series data.
+DynamiXFormer is a deep learning model designed for series forecasting tasks. It is built upon the classic Encoder-Decoder architecture but features deeply customized and innovative core components, making it more efficient and robust when handling complex time-series data.
 
 **Core Features:**
 

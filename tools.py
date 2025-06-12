@@ -19,7 +19,7 @@ class AdaptiveFreqDenoiseBlock(nn.Module):
         self.task_balance = nn.Parameter(torch.tensor([0.5]))
         
         self.reg_threshold = nn.Parameter(torch.tensor([0.3])) 
-        self.cls_threshold = nn.Parameter(torch.tensor([0.5]))  # 分类通道保留更多高频特征
+        self.cls_threshold = nn.Parameter(torch.tensor([0.5]))  
         
         if self.use_noise_reduction:
             self.noise_reduction = nn.Sequential(

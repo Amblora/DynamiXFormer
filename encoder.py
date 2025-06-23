@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from tools import *
 
 class EncoderLayer(nn.Module):
     def __init__(self, attention, d_model, d_ff=None, series_decomp=0.1, dropout=0.1, activation="relu", use_apdc=True):

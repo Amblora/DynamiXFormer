@@ -1,138 +1,136 @@
-# DynamiXFormer: 动态稀疏注意力与自适应频域降噪的混合序列预测模型
+目录
 
-本项目实现了一个名为 **DynamiXFormer** 的先进序列预测模型。该模型融合了多种创新技术，旨在解决序列预测中的关键挑战，如计算复杂度高、对噪声敏感以及难以捕捉复杂的时序依赖关系等问题。
+引言
 
-## 目录
-1. [项目简介](#1-项目简介)
-2. [模型架构与核心创新](#2-模型架构与核心创新)
-    - [2.1. 整体架构](#21-整体架构)
-    - [2.2. 动态稀疏注意力 (Dynamic Sparse Attention)](#22-动态稀疏注意力-dynamic-sparse-attention)
-    - [2.3. 自适应频域降噪 (Adaptive Frequency Denoise Block - APDC)](#23-自适应频域降噪-adaptive-frequency-denoise-block---apdc)
-    - [2.4. 相对事件嵌入 (Relative Event Embedding)](#24-相对事件嵌入-relative-event-embedding)
-    - [2.5. 傅里叶分解与趋势预测](#25-傅里叶分解与趋势预测)
-3. [代码结构解析](#3-代码结构解析)
-4. [使用方法](#4-使用方法)
-5. [可配置参数](#5-可配置参数)
-6. [潜在改进方向](#6-潜在改进方向)
+模型架构与核心创新
 
----
+代码结构分析
 
-## 1. 项目简介
+如何使用
 
-DynamiXFormer 是一个为序列预测任务设计的深度学习模型。它基于经典的 Encoder-Decoder 架构，但对其核心组件进行了深度定制和创新，使其在处理复杂序列数据时更加高效和鲁棒。
+可配置参数
 
-**核心特性:**
+潜在的改进方向
 
-- **动态稀疏注意力**: 替代了传统 Transformer 的全注意力，根据数据本身的特性（如波动性、趋势变化）动态生成稀疏的注意力矩阵，显著降低了计算复杂度和内存消耗，同时聚焦于最重要的时间点。
-- **混合域处理**: 模型同时在时域和频域上对信号进行处理。通过傅里叶分解将序列分解为趋势项和季节项，并引入自适应频域降噪模块（APDC）对特征进行去噪和提纯。
-- **数据驱动的嵌入**: 创新的相对事件嵌入机制，能够从原始数据中捕捉多尺度的相对变化和事件间的相似性，生成比传统位置编码更丰富的特征表示。
-- **分层预测**: 类似于 Autoformer 和 FEDformer，模型在解码器中对季节项和趋势项分别进行预测，最后相加得到最终结果，提高了预测的准确性和可解释性。
+引用
 
----
+开源协议
 
-## 2. 模型架构与核心创新
+致谢
 
-### 2.1. 整体架构
+📖 引言
+
+DynamiXFormer 是一个专为通过分析微震数据来预测岩爆风险而设计的深度学习框架。它基于经典的 Encoder-Decoder 架构，但通过深度定制和创新的核心组件，以应对地球物理事件预测中的独特挑战。
+
+该模型摒弃了传统的基于时间的预测范式，创新性地提出了扰动驱动范式。它不再是在固定的时间间隔上预测风险，而是直接将采矿引起的扰动（即工作面推进距离）映射到量化的风险水平，从而建立了一个更具物理意义和工程实践相关性的预测模型。
+
+核心特性:
+
+扰动驱动范式: 将预测与真实的工程活动对齐，克服了在非匀速采矿作业中，固定时间模型所造成的预测基准失配问题。
+
+动态稀疏注意力: 替代了传统的全注意力机制。它根据微震数据的内在属性（如能量释放、事件聚集性）动态生成稀疏的注意力模式，在显著降低计算复杂度的同时，将计算资源集中在最关键的前兆信号上。
+
+混合域处理: 模型同时在时域和频域中处理信号。它引入了自适应频率去噪模块 (AFDB)，从频域角度对特征进行去噪和提纯。
+
+数据驱动的嵌入: 创新的 RelativeEventEmbedding 机制从原始数据中捕捉多尺度的相对变化和事件间的物理相似性，生成比传统位置编码更丰富的特征表示。
+
+🏛️ 模型架构与核心创新
+
+1. 整体架构
 
 模型遵循 Encoder-Decoder 结构：
 
-1.  **输入处理**:
-    -   首先，使用傅里叶分解 (`fourier_decomp`) 将输入序列 `x_enc` 分解为初始的季节项 (`seasonal_init`) 和趋势项 (`trend_init`)。
-    -   `trend_init` 将作为解码器中累积趋势的初始值。
-    -   `seasonal_init` 将作为解码器的初始输入，用于预测未来的季节性变化。
+输入处理: 以推进距离为基准的微震输入序列 x_enc 被送入 DataEmbedding 层。该层包含了创新的 RelativeEventEmbedding，以生成丰富的、数据驱动的特征表示。
 
-2.  **编码器 (Encoder)**:
-    -   输入序列 `x_enc` 经过 `DataEmbedding` 层（包含创新的 `RelativeEventEmbedding`）进行嵌入。
-    -   嵌入后的特征被送入多层 `EncoderLayer`。每一层都使用 `DynamicSparseAttention` 来捕捉序列内部的依赖关系。
-    -   在每个 `EncoderLayer` 中，还集成了傅里叶分解和 `AdaptiveFreqDenoiseBlock` (APDC)，以在特征传递过程中进行去噪和细化。
+编码器: 嵌入后的特征被送入一个由 EncoderLayer 堆叠而成的编码器。每个层级都使用 DynamicSparseAttention 来捕捉序列内部的复杂依赖关系。同时，AdaptiveFreqDenoiseBlock 也被集成在每个 EncoderLayer 中，用于在信息传播过程中进行去噪和特征提纯。
 
-3.  **解码器 (Decoder)**:
-    -   解码器接收编码器的输出 `enc_out`、初始季节项 `seasonal_init` 和初始趋势项 `trend_init`。
-    -   每一层 `DecoderLayer` 包含两个注意力模块：
-        -   **自注意力**: 使用 `DynamicSparseAttention`（带掩码）处理解码器自身的输入（季节项）。
-        -   **交叉注意力**: 使用标准的 `FullAttention` 来融合编码器的输出信息。
-    -   解码器同样在每一层中进行傅里叶分解，并逐步预测和累加趋势项。
-    -   APDC模块也被用于解码器层，以保证输出特征的质量。
+解码器: 解码器接收编码器的输出 enc_out 和一个上下文序列。每个 DecoderLayer 包含两个注意力模块：
 
-4.  **输出层**:
-    -   解码器最终输出预测的季节项和累积的趋势项。
-    -   两者相加得到最终的预测结果 `pred_out`。
+自注意力: 使用 DynamicSparseAttention (带有因果掩码) 来处理解码器自身的输入。
 
-### 2.2. 动态稀疏注意力 (Dynamic Sparse Attention)
+交叉注意力: 使用标准的 FullAttention 来融合来自编码器输出的信息。
 
-这是模型的核心，它通过多种策略组合来确定每个查询（Query）应该关注哪些键（Key）：
+AFDB 模块同样被用于解码器层，以保证输出特征的质量。
 
--   **动态局部窗口**: 根据每个时间点的局部波动性（通过多尺度差分计算），动态确定一个回顾窗口大小。波动剧烈的地方，窗口可能更大。
--   **动态未来窗口**: 根据序列的趋势变化，为每个时间点分配一个动态的未来探查窗口。
--   **关键点检测**: 通过寻找变化率的局部峰值来识别序列中的“突变点”或“关键事件”，并强制模型关注这些点。
--   **分层全局采样**: 为了避免模型视野过于局部，该机制从序列的不同分段中，依据重要性得分（综合考虑幅值、变化率和频率特性）进行采样，确保捕获全局上下文。
--   **随机连接补充**: 在上述策略生成的稀疏连接基础上，如果连接密度低于某个自适应阈值，会随机增加一些连接，以保证信息流的充分性。
+输出层: 最终的投影层将解码器的输出映射为对未来推进步骤的风险等级预测。
 
-### 2.3. 自适应频域降噪 (Adaptive Frequency Denoise Block - APDC)
+2. 动态稀疏注意机制
 
-此模块在频域对特征进行精细化处理：
+这是模型的核心创新。它通过多种数据驱动策略的组合来决定每个查询（query）应该关注哪些键（key）：
 
--   **DCT变换**: 使用离散余弦变换（DCT）将时域特征转换到频域。
--   **多尺度滤波**: 通过多个可学习的权重向量，对不同频段的信号进行加权，实现多尺度滤波。
--   **自适应掩码**: 模块能根据频域能量动态生成一个掩码，自动识别并抑制噪声或不重要的频率分量。它为回归和分类任务（概念上的）设置了不同的阈值，允许模型根据任务需求保留不同类型的高频信息。
--   **卷积平滑**: 在滤波后，使用小型卷积网络对高频部分进行平滑和增强，进一步提纯特征。
+动态局部注意力: 根据每个事件的局部特征，学习一个动态的注意力窗口，以捕捉连续的、短程的因果关系。
 
-### 2.4. 相对事件嵌入 (Relative Event Embedding)
+关键点注意力: 通过寻找能量或变化率的局部峰值来识别序列中的“突变”或“关键事件”，并强制模型给予这些点全局的关注。
 
-为了取代固定的位置编码，该模块从数据自身学习时序关系：
+全局注意力: 为了保持对全局趋势的感知，该机制使用一个综合重要性分数，从整个序列中采样一组全局注意力点。
 
--   **多尺度相对特征**: 计算不同时间跨度（scale）下的特征相对差异（如距离、能量）。
--   **混合相似度**: 结合余弦相似度和欧氏距离，构建一个更鲁棒的事件间相似度度量。
--   **事件注意力**: 基于混合相似度，通过一个注意力机制计算每个事件的上下文表示（`PE_event`）。
--   最终的嵌入是相对特征编码和事件上下文表示的结合，为模型提供了极为丰富的、与数据内容相关的时序信息。
+自适应随机连接: 引入了受控的随机连接，以防止模型过度依赖预设的先验知识，并增强泛化能力。
 
-### 2.5. 傅里叶分解与趋势预测
+3. 自适应频率去噪模块 (AFDB)
 
--   **分解**: 使用快速傅里叶变换（FFT）将序列分解为低频部分（趋势项）和高频部分（季节项）。分解的边界由 `frequency_threshold` 参数控制。
--   **渐进式预测**: 在解码器中，每一层都会预测出一个残差趋势（`residual_trend`），并将其累加到之前的趋势项上。这种渐进式修正的方式使得趋势预测更加稳定和准确。
+该模块在频域中执行精细的特征提纯：
 
----
+DCT变换: 使用离散余弦变换（DCT）将时域特征转换到频域，频域中的能量通常更集中。
 
-## 3. 代码结构解析
+多尺度滤波: 使用可学习的权重对不同的频带进行加权，实现自适应的多尺度滤波。
 
--   `DynamiXFormer(nn.Module)`: 主模型，整合了编码器、解码器和嵌入层。
--   `Encoder(nn.Module)`: 编码器模块，由多个 `EncoderLayer` 堆叠而成。
--   `Decoder(nn.Module)`: 解码器模块，由多个 `DecoderLayer` 堆叠而成。
--   `EncoderLayer(nn.Module)`: 编码器基本单元，包含动态稀疏注意力、前馈网络、傅里叶分解和APDC。
--   `DecoderLayer(nn.Module)`: 解码器基本单元，包含动态稀疏自注意力、全交叉注意力、前馈网络、傅里叶分解和APDC。
--   `DynamicSparseAttention(nn.Module)`: **核心创新**，实现了动态稀疏注意力机制。
--   `AdaptiveFreqDenoiseBlock(nn.Module)`: **核心创新**，实现了自适应频域降噪。
--   `RelativeEventEmbedding(nn.Module)`: **核心创新**，实现了数据驱动的事件嵌入。
--   `DataEmbedding(nn.Module)`: 封装了 `TokenEmbedding`, `PositionalEmbedding` 和 `RelativeEventEmbedding` 的总嵌入层。
--   `fourier_decomp(nn.Module)`: 实现时序分解的工具类。
--   `FullAttention(nn.Module)`: 标准的全注意力实现，用于解码器的交叉注意力。
--   `AttentionLayer(nn.Module)`: 对注意力计算和投影进行封装的通用层。
+自适应掩码: 模块根据频率能量动态生成掩码，以自动识别和抑制噪声，同时保留或增强显著的信号细节。
 
----
+4. 相对事件嵌入
 
-## 4. 使用方法
+为了取代固定的位置编码，该模块从数据本身学习时间和物理关系：
 
-以下是一个如何实例化并使用 `DynamiXFormer` 模型的示例。
+多尺度相对特征: 计算不同时间跨度（尺度）下的特征差异（如空间距离、能量大小），以捕捉演化趋势。
 
-```python
+混合相似度: 通过结合余弦相似度（趋势相似性）和欧氏距离（数值相似性），构建了一个更稳健的事件间相似性度量。
+
+事件注意力: 基于这种混合相似度，一个注意力机制为每个事件计算上下文表示（PE_event）。
+
+最终的嵌入是相对特征编码和事件上下文表示的组合，为模型提供了异常丰富的、依赖于数据的时序信息。
+
+🔬 代码结构分析
+
+DynamiXFormer(nn.Module): 主模型类，集成了编码器、解码器和嵌入层。
+
+Encoder(nn.Module): 编码器模块，由一系列 EncoderLayer 堆叠而成。
+
+Decoder(nn.Module): 解码器模块，由一系列 DecoderLayer 堆叠而成。
+
+EncoderLayer(nn.Module): 编码器的基本构建块，包含动态稀疏注意力、前馈网络和AFDB。
+
+DecoderLayer(nn.Module): 解码器的基本构建块，包含动态稀疏自注意力、全交叉注意力和AFDB。
+
+DynamicSparseAttention(nn.Module): 核心创新，实现了动态稀疏注意机制。
+
+AdaptiveFreqDenoiseBlock(nn.Module): 核心创新，实现了自适应频域去噪。
+
+RelativeEventEmbedding(nn.Module): 核心创新，实现了数据驱动的事件嵌入。
+
+DataEmbedding(nn.Module): 嵌入层的包装类，整合了 TokenEmbedding, PositionalEmbedding, 和 RelativeEventEmbedding。
+
+FullAttention(nn.Module) & AttentionLayer(nn.Module): 标准的全注意力实现，用于解码器的交叉注意力。
+
+🚀 如何使用
+
+以下是一个如何实例化并使用 DynamiXFormer 模型的示例。
+
 import torch
+from model import DynamiXFormer # 假设您的模型类位于 model.py 文件中
 
-# 1. 模型参数配置
-enc_in = 7  # 编码器输入特征维度
-dec_in = 7  # 解码器输入特征维度
-c_out = 7   # 输出特征维度
-seq_len = 96  # 输入序列长度
-label_len = 48  # 解码器中用于引导的序列长度 (token length)
-pred_len = 24  # 预测序列长度
-
-d_model = 512  # 模型维度
-n_heads = 8    # 注意力头数
-e_layers = 2   # 编码器层数
-d_layers = 1   # 解码器层数
-d_ff = 2048  # 前馈网络维度
+# 1. 模型配置 (参考论文中的示例值)
+enc_in = 11            # 编码器输入特征维度
+dec_in = 11            # 解码器输入特征维度
+c_out = 1              # 输出特征维度 (例如：能量水平)
+seq_len = 96           # 输入序列长度 (例如：96个推进单位)
+label_len = 48         # 解码器用于上下文的序列长度
+pred_len = 24          # 预测序列长度 (例如：未来24个推进单位)
+d_model = 64           # 模型维度
+n_heads = 8            # 注意力头数
+e_layers = 2           # 编码器层数
+d_layers = 1           # 解码器层数
+d_ff = 128             # 前馈网络维度
 dropout = 0.1
 activation = 'gelu'
-series_decomp = 0.1 # 傅里叶分解的频率阈值
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # 2. 实例化模型
@@ -150,53 +148,50 @@ model = DynamiXFormer(
     d_ff=d_ff,
     dropout=dropout,
     activation=activation,
-    series_decomp=series_decomp,
     device=device
 ).to(device)
 
-# 3. 准备输入数据 (dummy data)
+# 3. 准备输入数据 (模拟数据)
 batch_size = 32
 x_enc = torch.randn(batch_size, seq_len, enc_in).to(device)
-x_mark_enc = None # 如果有时间戳特征，可以在这里提供
-
-# 解码器输入通常由输入序列的后半部分和零填充组成
-dec_input_token = x_enc[:, -label_len:, :]
-dec_input_zeros = torch.zeros(batch_size, pred_len, dec_in).to(device)
-x_dec = torch.cat([dec_input_token, dec_input_zeros], dim=1)
-x_mark_dec = None # 同样，用于解码器的时间戳特征
+# 解码器的输入通常由输入序列的后半部分和零填充组成
+dec_input_context = x_enc[:, -label_len:, :]
+dec_input_placeholder = torch.zeros(batch_size, pred_len, dec_in).to(device)
+x_dec = torch.cat([dec_input_context, dec_input_placeholder], dim=1)
 
 # 4. 模型前向传播
-# 在训练时，通常会提供掩码，但对于推理，可以为None
-output = model(x_enc, x_mark_enc, x_dec, x_mark_dec)
+# 时间特征 (x_mark_*) 在此特定范式中未使用，但保留以兼容
+output = model(x_enc, None, x_dec, None)
 
 # 5. 检查输出
 print(f"模型输出形状: {output.shape}")
-# 预期输出: torch.Size([32, 24, 7]) (batch_size, pred_len, c_out)
+# 预期输出: torch.Size([32, 24, 1]) (batch_size, pred_len, c_out)
 
-```
 
----
+⚙️ 可配置参数
 
-## 5. 可配置参数
+在实例化 DynamiXFormer 时，您可以通过以下关键参数进行配置：
 
-在实例化 `DynamiXFormer` 时，可以通过以下关键参数进行配置：
+enc_in, dec_in, c_out: 输入和输出数据的特征维度。
 
--   `enc_in`, `dec_in`, `c_out`: 输入、输出数据的特征维度。
--   `seq_len`, `label_len`, `pred_len`: 输入、标签和预测序列的长度。
--   `d_model`, `n_heads`, `d_ff`: Transformer 的核心维度参数。
--   `e_layers`, `d_layers`: 编码器和解码器的层数。
--   `series_decomp`: 傅里叶分解的频率阈值。值越小，趋势项包含的频率成分越低（趋势更平滑）。
--   `encoder_apdc`, `decoder_apdc` (bool): 是否在编码器/解码器中启用 `AdaptiveFreqDenoiseBlock`。可用于消融实验。
--   `use_event_embeding_enc`, `use_event_embeding_dec` (bool): 是否在编码器/解码器嵌入层中使用 `RelativeEventEmbedding`。可用于消融实验。
--   `local_window`, `future_window` (在 `DynamicSparseAttention` 中): 控制动态窗口的基础大小。
+seq_len, label_len, pred_len: 输入、标签和预测序列的长度。
 
----
+d_model, n_heads, d_ff: Transformer 的核心维度参数。
 
-## 6. 潜在改进方向
+e_layers, d_layers: 编码器和解码器的层数。
 
--   **性能优化**: `_get_sparse_indices` 方法中包含Python循环，可以尝试通过`torch`的向量化操作进行优化，以加速稀疏索引的生成。
--   **超参数调优**: 模型的性能对 `d_model`, `n_heads`, `series_decomp` 以及 `DynamicSparseAttention` 中的 `threshold` 等超参数敏感，需要针对具体数据集进行细致调优。
--   **消融研究**: 利用 `encoder_apdc`, `use_event_embeding_enc` 等布尔标志，可以方便地进行消融研究，以验证每个创新模块的有效性。
--   **可扩展性**: 可以探索将此模型应用于其他序列数据类型，如自然语言处理或音频信号。
--   **频域分析工具**: 尝试使用小波变换（Wavelet Transform）等其他时频分析工具替代DCT，可能会在处理非平稳信号时带来优势。
+encoder_apdc, decoder_apdc (布尔值): 是否在编码器/解码器中启用 AdaptiveFreqDenoiseBlock。可用于消融实验。
 
+use_event_embeding_enc, use_event_embeding_dec (布尔值): 是否在编码器/解码器中使用 RelativeEventEmbedding。可用于消融实验。
+
+local_window (在 DynamicSparseAttention 中): 动态局部窗口的基础尺寸。
+
+💡 潜在的改进方向
+
+性能优化: DynamicSparseAttention 中的 _get_sparse_indices 方法包含Python循环。这些循环有潜力通过PyTorch的向量化操作进行优化，以提升性能。
+
+超参数调优: 模型的性能对 d_model, n_heads 以及 DynamicSparseAttention 中的 threshold 等超参数敏感。针对特定数据集进行微调至关重要。
+
+可扩展性: 将此框架应用于其他扰动驱动的物理过程，例如土木工程中的地震监测，或基于运行负载的工业设备故障预测。
+
+更高级的关系建模: 探索使用图神经网络（GNNs）来建模更复杂的、非序列化的事件间关系，以扩展 RelativeEventEmbedding 模块的能力。

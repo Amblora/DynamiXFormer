@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from Layers import *
 from embed import *
 from encoder import *
 from decoder import *

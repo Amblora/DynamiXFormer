@@ -1,127 +1,86 @@
-DynamiXFormer: Learning from Disturbances, Not Timestamps
+### Table of Contents
 
-[English] | [中文]
+1. [Introduction](https://www.google.com/search?q=%23-introduction)
+2. [Model Architecture & Core Innovations](https://www.google.com/search?q=%23-model-architecture--core-innovations)
+3. [Code Structure Analysis](https://www.google.com/search?q=%23-code-structure-analysis)
+4. [How to Use](https://www.google.com/search?q=%23-how-to-use)
+5. [Configurable Parameters](https://www.google.com/search?q=%23-configurable-parameters)
+6. [Potential Improvements](https://www.google.com/search?q=%23-potential-improvements)
+7. [Citation](https://www.google.com/search?q=%23-citation)
+8. [License](https://www.google.com/search?q=%23-license)
+9. [Acknowledgements](https://www.google.com/search?q=%23-acknowledgements)
 
-This repository contains the official PyTorch implementation for the paper: "Learning from Disturbances, Not Timestamps: A Dynamic Event-Driven Transformer for Rock Burst Forecasting" (Measurement, 2025).
+### 📖 Introduction
 
-[English]
+**DynamiXFormer** is a deep learning framework designed specifically for forecasting rock burst risk by analyzing microseismic data. It is built upon the classic Encoder-Decoder architecture but features deeply customized and innovative core components to address the unique challenges in geophysical event prediction.
 
-Table of Contents
+The model departs from conventional time-based forecasting and introduces a **Disturbance-Driven Paradigm**. Instead of predicting risk at fixed time intervals, it directly maps mining-induced disturbances (i.e., the working face advance distance) to a quantitative risk level, establishing a more physically meaningful and practically relevant forecasting model.
 
-Introduction
+#### Core Features:
 
-Model Architecture & Core Innovations
+- **Disturbance-Driven Paradigm**: Aligns predictions with real-world engineering activities, overcoming the mismatch caused by non-uniform mining operations in fixed-time models.
+- **Dynamic Sparse Attention**: Replaces the conventional full attention mechanism. It dynamically generates sparse attention patterns based on the intrinsic properties of microseismic data (e.g., energy release, event clustering), significantly reducing computational complexity while focusing on the most critical precursory signals.
+- **Hybrid Domain Processing**: The model processes signals in both the time and frequency domains. It introduces an **Adaptive Frequency Denoise Block (AFDB)** to denoise and refine features from a frequency-domain perspective.
+- **Data-Driven Embeddings**: An innovative **`RelativeEventEmbedding`** mechanism captures multi-scale relative changes and inter-event physical similarities from the raw data, generating a richer feature representation than traditional positional encodings.
 
-Code Structure Analysis
+### 🏛️ Model Architecture & Core Innovations
 
-How to Use
-
-Configurable Parameters
-
-Potential Improvements
-
-Citation
-
-License
-
-Acknowledgements
-
-📖 Introduction
-
-DynamiXFormer is a deep learning framework designed specifically for forecasting rock burst risk by analyzing microseismic data. It is built upon the classic Encoder-Decoder architecture but features deeply customized and innovative core components to address the unique challenges in geophysical event prediction.
-
-The model departs from conventional time-based forecasting and introduces a Disturbance-Driven Paradigm. Instead of predicting risk at fixed time intervals, it directly maps mining-induced disturbances (i.e., the working face advance distance) to a quantitative risk level, establishing a more physically meaningful and practically relevant forecasting model.
-
-Core Features:
-
-Disturbance-Driven Paradigm: Aligns predictions with real-world engineering activities, overcoming the mismatch caused by non-uniform mining operations in fixed-time models.
-
-Dynamic Sparse Attention: Replaces the conventional full attention mechanism. It dynamically generates sparse attention patterns based on the intrinsic properties of microseismic data (e.g., energy release, event clustering), significantly reducing computational complexity while focusing on the most critical precursory signals.
-
-Hybrid Domain Processing: The model processes signals in both the time and frequency domains. It introduces an Adaptive Frequency Denoise Block (AFDB) to denoise and refine features from a frequency-domain perspective.
-
-Data-Driven Embeddings: An innovative RelativeEventEmbedding mechanism captures multi-scale relative changes and inter-event physical similarities from the raw data, generating a richer feature representation than traditional positional encodings.
-
-🏛️ Model Architecture & Core Innovations
-
-1. Overall Architecture
+#### 1. Overall Architecture
 
 The model follows an Encoder-Decoder structure:
 
-Input Processing: The input microseismic sequence x_enc, which is benchmarked by advance distance, is passed through a DataEmbedding layer. This layer includes the innovative RelativeEventEmbedding to generate rich, data-dependent feature representations.
+- **Input Processing**: The input microseismic sequence `x_enc`, which is benchmarked by advance distance, is passed through a `DataEmbedding` layer. This layer includes the innovative `RelativeEventEmbedding` to generate rich, data-dependent feature representations.
+- **Encoder**: The embedded features are fed into a stack of `EncoderLayer`s. Each layer uses `DynamicSparseAttention` to capture complex dependencies within the sequence. An `AdaptiveFreqDenoiseBlock` is also integrated within each `EncoderLayer` to denoise and refine features during propagation.
+- **Decoder**: The decoder receives the encoder's output `enc_out` and a context sequence. Each `DecoderLayer` contains two attention modules:
+  - **Self-Attention**: Uses `DynamicSparseAttention` (with a causal mask) to process the decoder's own input.
+  - **Cross-Attention**: Uses a standard `FullAttention` to fuse information from the encoder's output.
+  - The AFDB module is also used in the decoder layers to ensure the quality of the output features.
+- **Output Layer**: A final projection layer maps the decoder's output to the predicted risk level for future advance steps.
 
-Encoder: The embedded features are fed into a stack of EncoderLayers. Each layer uses DynamicSparseAttention to capture complex dependencies within the sequence. An AdaptiveFreqDenoiseBlock is also integrated within each EncoderLayer to denoise and refine features during propagation.
-
-Decoder: The decoder receives the encoder's output enc_out and a context sequence. Each DecoderLayer contains two attention modules:
-
-Self-Attention: Uses DynamicSparseAttention (with a causal mask) to process the decoder's own input.
-
-Cross-Attention: Uses a standard FullAttention to fuse information from the encoder's output.
-
-The AFDB module is also used in the decoder layers to ensure the quality of the output features.
-
-Output Layer: A final projection layer maps the decoder's output to the predicted risk level for future advance steps.
-
-2. Dynamic Sparse Attention
+#### 2. Dynamic Sparse Attention
 
 This is a core innovation of the model. It determines which keys each query should attend to through a combination of data-driven strategies:
 
-Dynamic Local Attention: Based on the local characteristics of each event, a dynamic attention window is learned to capture continuous, short-range causal relationships.
+- **Dynamic Local Attention**: Based on the local characteristics of each event, a dynamic attention window is learned to capture continuous, short-range causal relationships.
+- **Key-point Attention**: Identifies "abrupt changes" or "critical events" in the series by finding local peaks in energy or rate of change, forcing the model to grant these points global attention.
+- **Global Attention**: To maintain an awareness of global trends, this mechanism samples a set of global attention points from the entire sequence using a comprehensive importance score.
+- **Adaptive Random Connectivity**: Introduces a controlled amount of random connections to prevent the model from over-relying on predefined priors and to enhance generalization.
 
-Key-point Attention: Identifies "abrupt changes" or "critical events" in the series by finding local peaks in energy or rate of change, forcing the model to grant these points global attention.
-
-Global Attention: To maintain an awareness of global trends, this mechanism samples a set of global attention points from the entire sequence using a comprehensive importance score.
-
-Adaptive Random Connectivity: Introduces a controlled amount of random connections to prevent the model from over-relying on predefined priors and to enhance generalization.
-
-3. Adaptive Frequency Denoise Block (AFDB)
+#### 3. Adaptive Frequency Denoise Block (AFDB)
 
 This module performs fine-grained feature refinement in the frequency domain:
 
-DCT Transform: Uses the Discrete Cosine Transform (DCT) to convert time-domain features into the frequency domain, where energy is often more compacted.
+- **DCT Transform**: Uses the Discrete Cosine Transform (DCT) to convert time-domain features into the frequency domain, where energy is often more compacted.
+- **Multi-scale Filtering**: Applies learnable weights to different frequency bands, achieving adaptive multi-scale filtering.
+- **Adaptive Masking**: The module dynamically generates a mask based on frequency energy to automatically identify and suppress noise while preserving or enhancing salient signal details.
 
-Multi-scale Filtering: Applies learnable weights to different frequency bands, achieving adaptive multi-scale filtering.
-
-Adaptive Masking: The module dynamically generates a mask based on frequency energy to automatically identify and suppress noise while preserving or enhancing salient signal details.
-
-4. Relative Event Embedding
+#### 4. Relative Event Embedding
 
 To replace fixed positional encodings, this module learns temporal and physical relationships from the data itself:
 
-Multi-scale Relative Features: Calculates feature differences (e.g., spatial distance, energy magnitude) across various time spans (scales) to capture evolutionary trends.
+- **Multi-scale Relative Features**: Calculates feature differences (e.g., spatial distance, energy magnitude) across various time spans (scales) to capture evolutionary trends.
+- **Hybrid Similarity**: Constructs a robust inter-event similarity metric by combining cosine similarity (trend similarity) and Euclidean distance (magnitude similarity).
+- **Event Attention**: Based on this hybrid similarity, an attention mechanism computes a contextual representation for each event (`PE_event`).
+- The final embedding is a combination of the relative feature encoding and the event context representation, providing the model with exceptionally rich, data-dependent temporal information.
 
-Hybrid Similarity: Constructs a robust inter-event similarity metric by combining cosine similarity (trend similarity) and Euclidean distance (magnitude similarity).
+### 🔬 Code Structure Analysis
 
-Event Attention: Based on this hybrid similarity, an attention mechanism computes a contextual representation for each event (PE_event).
+- `DynamiXFormer(nn.Module)`: The main model class, integrating the encoder, decoder, and embedding layers.
+- `Encoder(nn.Module)`: The encoder module, composed of a stack of `EncoderLayer`s.
+- `Decoder(nn.Module)`: The decoder module, composed of a stack of `DecoderLayer`s.
+- `EncoderLayer(nn.Module)`: The basic building block of the encoder, containing dynamic sparse attention, a feed-forward network, and AFDB.
+- `DecoderLayer(nn.Module)`: The basic building block of the decoder, containing dynamic sparse self-attention, full cross-attention, and AFDB.
+- **`DynamicSparseAttention(nn.Module)`**: **Core Innovation**, implementing the dynamic sparse attention mechanism.
+- **`AdaptiveFreqDenoiseBlock(nn.Module)`**: **Core Innovation**, implementing adaptive frequency-domain denoising.
+- **`RelativeEventEmbedding(nn.Module)`**: **Core Innovation**, implementing the data-driven event embedding.
+- `DataEmbedding(nn.Module)`: A wrapper class for the total embedding layer, combining `TokenEmbedding`, `PositionalEmbedding`, and `RelativeEventEmbedding`.
+- `FullAttention(nn.Module)` & `AttentionLayer(nn.Module)`: Standard attention implementations used for the decoder's cross-attention.
 
-The final embedding is a combination of the relative feature encoding and the event context representation, providing the model with exceptionally rich, data-dependent temporal information.
+### 🚀 How to Use
 
-🔬 Code Structure Analysis
+Below is an example of how to instantiate and use the `DynamiXFormer` model.
 
-DynamiXFormer(nn.Module): The main model class, integrating the encoder, decoder, and embedding layers.
-
-Encoder(nn.Module): The encoder module, composed of a stack of EncoderLayers.
-
-Decoder(nn.Module): The decoder module, composed of a stack of DecoderLayers.
-
-EncoderLayer(nn.Module): The basic building block of the encoder, containing dynamic sparse attention, a feed-forward network, and AFDB.
-
-DecoderLayer(nn.Module): The basic building block of the decoder, containing dynamic sparse self-attention, full cross-attention, and AFDB.
-
-DynamicSparseAttention(nn.Module): Core Innovation, implementing the dynamic sparse attention mechanism.
-
-AdaptiveFreqDenoiseBlock(nn.Module): Core Innovation, implementing adaptive frequency-domain denoising.
-
-RelativeEventEmbedding(nn.Module): Core Innovation, implementing the data-driven event embedding.
-
-DataEmbedding(nn.Module): A wrapper class for the total embedding layer, combining TokenEmbedding, PositionalEmbedding, and RelativeEventEmbedding.
-
-FullAttention(nn.Module) & AttentionLayer(nn.Module): Standard attention implementations used for the decoder's cross-attention.
-
-🚀 How to Use
-
-Below is an example of how to instantiate and use the DynamiXFormer model.
-
+```
 import torch
 from model import DynamiXFormer # Assuming your model classes are in model.py
 
@@ -174,32 +133,23 @@ output = model(x_enc, None, x_dec, None)
 # 5. Check Output
 print(f"Model output shape: {output.shape}")
 # Expected output: torch.Size([32, 24, 1]) (batch_size, pred_len, c_out)
+```
 
+### ⚙️ Configurable Parameters
 
-⚙️ Configurable Parameters
+When instantiating `DynamiXFormer`, you can configure it with the following key parameters:
 
-When instantiating DynamiXFormer, you can configure it with the following key parameters:
+- `enc_in`, `dec_in`, `c_out`: Feature dimensions for input and output data.
+- `seq_len`, `label_len`, `pred_len`: Lengths of the input, label, and prediction sequences.
+- `d_model`, `n_heads`, `d_ff`: Core dimensionality parameters of the Transformer.
+- `e_layers`, `d_layers`: The number of layers in the encoder and decoder.
+- `encoder_apdc`, `decoder_apdc` (bool): Whether to enable the `AdaptiveFreqDenoiseBlock` in the encoder/decoder. Useful for ablation studies.
+- `use_event_embeding_enc`, `use_event_embeding_dec` (bool): Whether to use `RelativeEventEmbedding` in the encoder/decoder. Useful for ablation studies.
+- `local_window` (in `DynamicSparseAttention`): The base size for the dynamic local window.
 
-enc_in, dec_in, c_out: Feature dimensions for input and output data.
+### 💡 Potential Improvements
 
-seq_len, label_len, pred_len: Lengths of the input, label, and prediction sequences.
-
-d_model, n_heads, d_ff: Core dimensionality parameters of the Transformer.
-
-e_layers, d_layers: The number of layers in the encoder and decoder.
-
-encoder_apdc, decoder_apdc (bool): Whether to enable the AdaptiveFreqDenoiseBlock in the encoder/decoder. Useful for ablation studies.
-
-use_event_embeding_enc, use_event_embeding_dec (bool): Whether to use RelativeEventEmbedding in the encoder/decoder. Useful for ablation studies.
-
-local_window (in DynamicSparseAttention): The base size for the dynamic local window.
-
-💡 Potential Improvements
-
-Performance Optimization: The _get_sparse_indices method in DynamicSparseAttention contains Python loops. These could potentially be optimized using PyTorch's vectorized operations to accelerate performance.
-
-Hyperparameter Tuning: The model's performance is sensitive to hyperparameters like d_model, n_heads, and the threshold in DynamicSparseAttention. Fine-tuning these for specific datasets is crucial.
-
-Extensibility: Apply the framework to other disturbance-driven physical processes, such as seismic monitoring in civil engineering or industrial equipment failure prediction based on operational load.
-
-Advanced Relational Modeling: Explore using Graph Neural Networks (GNNs) to model more complex, non-sequential inter-event relationships, extending the capabilities of the RelativeEventEmbedding module.
+- **Performance Optimization**: The `_get_sparse_indices` method in `DynamicSparseAttention` contains Python loops. These could potentially be optimized using PyTorch's vectorized operations to accelerate performance.
+- **Hyperparameter Tuning**: The model's performance is sensitive to hyperparameters like `d_model`, `n_heads`, and the `threshold` in `DynamicSparseAttention`. Fine-tuning these for specific datasets is crucial.
+- **Extensibility**: Apply the framework to other disturbance-driven physical processes, such as seismic monitoring in civil engineering or industrial equipment failure prediction based on operational load.
+- **Advanced Relational Modeling**: Explore using Graph Neural Networks (GNNs) to model more complex, non-sequential inter-event relationships, extending the capabilities of the `RelativeEventEmbedding` module.

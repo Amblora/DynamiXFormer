@@ -1,14 +1,12 @@
 ### Table of Contents
 
-1. [Introduction]
-2. [Model Architecture & Core Innovations]
-3. [Code Structure Analysis]
-4. [How to Use]
-5. [Configurable Parameters]
-6. [Potential Improvements]
-7. [Citation]
-8. [License]
-9. [Acknowledgements]
+1. Introduction
+2. Model Architecture & Core Innovations
+3. Code Structure Analysis
+4. How to Use
+5. Configurable Parameters
+6. Potential Improvements
+
 
 ### 📖 Introduction
 

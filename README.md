@@ -1,14 +1,14 @@
 ### Table of Contents
 
-1. [Introduction](https://www.google.com/search?q=%23-introduction)
-2. [Model Architecture & Core Innovations](https://www.google.com/search?q=%23-model-architecture--core-innovations)
-3. [Code Structure Analysis](https://www.google.com/search?q=%23-code-structure-analysis)
-4. [How to Use](https://www.google.com/search?q=%23-how-to-use)
-5. [Configurable Parameters](https://www.google.com/search?q=%23-configurable-parameters)
-6. [Potential Improvements](https://www.google.com/search?q=%23-potential-improvements)
-7. [Citation](https://www.google.com/search?q=%23-citation)
-8. [License](https://www.google.com/search?q=%23-license)
-9. [Acknowledgements](https://www.google.com/search?q=%23-acknowledgements)
+1. [Introduction]
+2. [Model Architecture & Core Innovations]
+3. [Code Structure Analysis]
+4. [How to Use]
+5. [Configurable Parameters]
+6. [Potential Improvements]
+7. [Citation]
+8. [License]
+9. [Acknowledgements]
 
 ### 📖 Introduction
 

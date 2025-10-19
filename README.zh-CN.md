@@ -1,14 +1,12 @@
 ### 目录
 
-1. [引言](https://www.google.com/search?q=%23-引言)
-2. [模型架构与核心创新](https://www.google.com/search?q=%23-模型架构与核心创新)
-3. [代码结构分析](https://www.google.com/search?q=%23-代码结构分析)
-4. [如何使用](https://www.google.com/search?q=%23-如何使用)
-5. [可配置参数](https://www.google.com/search?q=%23-可配置参数)
-6. [潜在的改进方向](https://www.google.com/search?q=%23-潜在的改进方向)
-7. [引用](https://www.google.com/search?q=%23-引用)
-8. [开源协议](https://www.google.com/search?q=%23-开源协议)
-9. [致谢](https://www.google.com/search?q=%23-致谢)
+1. [引言]
+2. [模型架构与核心创新]
+3. [代码结构分析]
+4. [如何使用]
+5. [可配置参数]
+6. [潜在的改进方向]
+
 
 ### 📖 引言
 
